@@ -1,0 +1,304 @@
+{
+  "atelier-noir": {
+    "hero": "/catalogue/atelier-noir/hero.webp",
+    "thumb": "/catalogue/atelier-noir/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/atelier-noir/g0.webp",
+        "w": 1600,
+        "h": 1131
+      },
+      {
+        "src": "/catalogue/atelier-noir/g1.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/atelier-noir/g2.webp",
+        "w": 928,
+        "h": 1600
+      },
+      {
+        "src": "/catalogue/atelier-noir/g3.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/atelier-noir/g4.webp",
+        "w": 1600,
+        "h": 1067
+      }
+    ],
+    "refs": [
+      "/catalogue/atelier-noir/ref0.jpg",
+      "/catalogue/atelier-noir/ref1.jpg",
+      "/catalogue/atelier-noir/ref2.jpg"
+    ]
+  },
+  "eclat-lunaire": {
+    "hero": "/catalogue/eclat-lunaire/hero.webp",
+    "thumb": "/catalogue/eclat-lunaire/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/eclat-lunaire/g0.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/eclat-lunaire/g1.webp",
+        "w": 1600,
+        "h": 1066
+      },
+      {
+        "src": "/catalogue/eclat-lunaire/g2.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/eclat-lunaire/g3.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/eclat-lunaire/g4.webp",
+        "w": 1600,
+        "h": 1067
+      }
+    ],
+    "refs": [
+      "/catalogue/eclat-lunaire/ref0.jpg",
+      "/catalogue/eclat-lunaire/ref1.jpg",
+      "/catalogue/eclat-lunaire/ref2.jpg"
+    ]
+  },
+  "cuisine-verte": {
+    "hero": "/catalogue/cuisine-verte/hero.webp",
+    "thumb": "/catalogue/cuisine-verte/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/cuisine-verte/g0.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/cuisine-verte/g1.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/cuisine-verte/g2.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/cuisine-verte/g3.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/cuisine-verte/g4.webp",
+        "w": 1067,
+        "h": 1600
+      }
+    ],
+    "refs": [
+      "/catalogue/cuisine-verte/ref0.jpg",
+      "/catalogue/cuisine-verte/ref1.jpg",
+      "/catalogue/cuisine-verte/ref2.jpg"
+    ]
+  },
+  "graphite-chaleureux": {
+    "hero": "/catalogue/graphite-chaleureux/hero.webp",
+    "thumb": "/catalogue/graphite-chaleureux/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/graphite-chaleureux/g0.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/graphite-chaleureux/g1.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/graphite-chaleureux/g2.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/graphite-chaleureux/g3.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/graphite-chaleureux/g4.webp",
+        "w": 1600,
+        "h": 1067
+      }
+    ],
+    "refs": [
+      "/catalogue/graphite-chaleureux/ref0.jpg",
+      "/catalogue/graphite-chaleureux/ref1.jpg",
+      "/catalogue/graphite-chaleureux/ref2.jpg"
+    ]
+  },
+  "showroom-terracotta": {
+    "hero": "/catalogue/showroom-terracotta/hero.webp",
+    "thumb": "/catalogue/showroom-terracotta/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/showroom-terracotta/g0.webp",
+        "w": 1600,
+        "h": 1381
+      },
+      {
+        "src": "/catalogue/showroom-terracotta/g1.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/showroom-terracotta/g2.webp",
+        "w": 1600,
+        "h": 968
+      },
+      {
+        "src": "/catalogue/showroom-terracotta/g3.webp",
+        "w": 1400,
+        "h": 1209
+      }
+    ],
+    "refs": [
+      "/catalogue/showroom-terracotta/ref0.jpg",
+      "/catalogue/showroom-terracotta/ref1.jpg",
+      "/catalogue/showroom-terracotta/ref2.jpg"
+    ]
+  },
+  "cuisine-locative-optimisee": {
+    "hero": "/catalogue/cuisine-locative-optimisee/hero.webp",
+    "thumb": "/catalogue/cuisine-locative-optimisee/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/cuisine-locative-optimisee/g0.webp",
+        "w": 1600,
+        "h": 1066
+      },
+      {
+        "src": "/catalogue/cuisine-locative-optimisee/g1.webp",
+        "w": 1600,
+        "h": 1066
+      },
+      {
+        "src": "/catalogue/cuisine-locative-optimisee/g2.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/cuisine-locative-optimisee/g3.webp",
+        "w": 1600,
+        "h": 1067
+      },
+      {
+        "src": "/catalogue/cuisine-locative-optimisee/g4.webp",
+        "w": 1280,
+        "h": 853
+      }
+    ],
+    "refs": [
+      "/catalogue/cuisine-locative-optimisee/ref0.jpg",
+      "/catalogue/cuisine-locative-optimisee/ref1.jpg",
+      "/catalogue/cuisine-locative-optimisee/ref2.jpg"
+    ]
+  },
+  "arrex-daytona": {
+    "hero": "/catalogue/arrex-daytona/hero.webp",
+    "thumb": "/catalogue/arrex-daytona/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/arrex-daytona/g0.webp",
+        "w": 1600,
+        "h": 952
+      },
+      {
+        "src": "/catalogue/arrex-daytona/g1.webp",
+        "w": 1444,
+        "h": 976
+      },
+      {
+        "src": "/catalogue/arrex-daytona/g2.webp",
+        "w": 1600,
+        "h": 969
+      },
+      {
+        "src": "/catalogue/arrex-daytona/g3.webp",
+        "w": 988,
+        "h": 1173
+      }
+    ],
+    "refs": [
+      "/catalogue/arrex-daytona/ref0.jpg",
+      "/catalogue/arrex-daytona/ref1.jpg",
+      "/catalogue/arrex-daytona/ref2.jpg"
+    ]
+  },
+  "arrex-sauge-noyer": {
+    "hero": "/catalogue/arrex-sauge-noyer/hero.webp",
+    "thumb": "/catalogue/arrex-sauge-noyer/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/arrex-sauge-noyer/g0.webp",
+        "w": 1600,
+        "h": 877
+      },
+      {
+        "src": "/catalogue/arrex-sauge-noyer/g1.webp",
+        "w": 1600,
+        "h": 956
+      }
+    ],
+    "refs": [
+      "/catalogue/arrex-sauge-noyer/ref0.jpg",
+      "/catalogue/arrex-sauge-noyer/ref1.jpg"
+    ]
+  },
+  "arrex-lac": {
+    "hero": "/catalogue/arrex-lac/hero.webp",
+    "thumb": "/catalogue/arrex-lac/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/arrex-lac/g0.webp",
+        "w": 1600,
+        "h": 970
+      },
+      {
+        "src": "/catalogue/arrex-lac/g1.webp",
+        "w": 1600,
+        "h": 880
+      },
+      {
+        "src": "/catalogue/arrex-lac/g2.webp",
+        "w": 1288,
+        "h": 1600
+      }
+    ],
+    "refs": [
+      "/catalogue/arrex-lac/ref0.jpg",
+      "/catalogue/arrex-lac/ref1.jpg",
+      "/catalogue/arrex-lac/ref2.jpg"
+    ]
+  },
+  "arrex-loft-clair": {
+    "hero": "/catalogue/arrex-loft-clair/hero.webp",
+    "thumb": "/catalogue/arrex-loft-clair/thumb.webp",
+    "gallery": [
+      {
+        "src": "/catalogue/arrex-loft-clair/g0.webp",
+        "w": 1600,
+        "h": 877
+      }
+    ],
+    "refs": [
+      "/catalogue/arrex-loft-clair/ref0.jpg"
+    ]
+  }
+}
