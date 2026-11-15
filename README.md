@@ -8,9 +8,9 @@ Application web (mobile d'abord) : le client photographie sa pièce, choisit une
 
 | Étape | Écran | Ce qui se passe |
 |---|---|---|
-| 1. Votre pièce | `StepPhoto` | Appareil photo natif (`capture="environment"`) ou import / glisser-déposer. Correction EXIF, réduction à 2560 px, contrôles qualité (résolution, portrait, luminosité). |
+| 1. Votre pièce | `StepPhoto`, `ZoneEditor` | Appareil photo natif (`capture="environment"`) ou import / glisser-déposer. Correction EXIF, recadrage au format exact du rendu, réduction à 2560 px, contrôles (résolution, portrait, luminosité). Le client peint au doigt la zone à transformer (recommandé). |
 | 2. Votre cuisine | `StepModel` | 10 modèles (6 réalisations BP + 4 Arrex), filtres, nuanciers, options : implantation, ambiance jour/soir, sol, désencombrement. |
-| 3. Le rendu | `StepRender` | Génération IA, progression, comparateur avant/après, plein écran au pixel près, téléchargement, partage, historique des essais, formulaire d'estimation. |
+| 3. Le rendu | `StepRender` | Génération IA, contrôle qualité automatique (2ᵉ essai si besoin), restauration de la photo hors zone, comparateur avant/après, plein écran au pixel près, téléchargement, partage, historique des essais, formulaire d'estimation. |
 
 ## Moteur de rendu
 
@@ -20,6 +20,19 @@ Le rendu utilise **Nano Banana Pro** (Google Gemini 3 Pro Image), le modèle qui
 2. 1 à 3 photos de la réalisation BP choisie (`public/catalogue/<id>/ref*.jpg`) ;
 3. une fiche matière rédigée pour chaque modèle (`spec` dans `src/data/catalogue.ts`) ;
 4. un prompt d'architecture-photo (`src/lib/prompt.ts`) qui impose de garder la pièce et de ne remplacer que la cuisine.
+
+## Garantie de réalisme
+
+| Mécanisme | Où | Effet |
+|---|---|---|
+| Zone à transformer | `ZoneEditor` → `/api/render` | L'IA reçoit une image guide (zone surlignée en rouge) et la consigne de ne rien modifier ailleurs. |
+| Contrôle de perspective | `src/lib/quality.ts` | Comparaison des contours de la pièce avant/après (hors zone). Si un recalage fait mieux que l'identité, la caméra a « bougé ». |
+| Contrôle de débordement | `src/lib/quality.ts` | Part de la surface hors zone modifiée par l'IA (ex. îlot posé au milieu de la pièce). Seuil : 12 %. |
+| Extension de zone | `extendZone` | Les oublis du client juste au-dessus/au-dessous du tracé (pied d'un ancien frigo) sont absorbés, pas les ajouts latéraux. |
+| 2ᵉ essai automatique | `StepRender` | Si un contrôle échoue, un nouveau rendu est lancé ; le meilleur des deux est gardé. |
+| Restauration au pixel près | `src/lib/composite.ts` | Hors zone, la photo d'origine (pleine résolution) est remise, avec un fondu d'environ 1 %. |
+
+Le tout tourne dans le navigateur, sans coût supplémentaire. Mesures réelles : rendu 4K en 90 à 100 s, environ 24 crédits kie.ai par rendu.
 
 Trois fournisseurs interchangeables (`src/lib/ai/`) — un seul suffit :
 
@@ -71,7 +84,9 @@ Conseil : choisir comme références des vues frontales et larges, où façades,
 
 1. Importer le dépôt dans Vercel.
 2. Renseigner `KIE_API_KEY` (ou `FAL_KEY`), `RENDER_RESOLUTION=4K`, `NEXT_PUBLIC_SITE_URL`, et la destination des leads.
-3. Brancher un sous-domaine, par exemple `visualiseur.bpcuisines.ch`, et ajouter un bouton « Visualiser chez moi » sur le site principal.
+   La clé kie.ai sert aussi à l'upload des images (`kieai.redpandaai.co`, adresse modifiable via `KIE_UPLOAD_URL`).
+3. Settings → Deployment Protection : désactiver « Vercel Authentication » pour que les clients accèdent à l'outil sans compte Vercel.
+4. Brancher un sous-domaine, par exemple `visualiseur.bpcuisines.ch`, et ajouter un bouton « Visualiser chez moi » sur le site principal.
 
 `maxDuration` de la route de rendu est fixé à 300 s (plan Pro conseillé si vous utilisez Gemini en synchrone).
 
@@ -84,11 +99,21 @@ Conseil : choisir comme références des vues frontales et larges, où façades,
 | `/api/render/:jobId` | GET | État du rendu (`pending` / `done` + `imageUrl` / `error`). |
 | `/api/lead` | POST (JSON) | Demande d'estimation. |
 
-## Captures du parcours
+## Tests et captures
+
+Parcours complet (desktop + mobile) :
 
 ```bash
 node scripts/screenshots.cjs http://localhost:3000 docs/screens
 ```
+
+Parcours avec zone peinte et contrôle qualité (optionnel : nom d'un modèle) :
+
+```bash
+node scripts/test-zone.cjs http://localhost:3000 docs/screens "Éclat lunaire"
+```
+
+Pour rejouer le contrôle qualité sur un rendu existant sans coût IA, démarrer en mode démo avec `DEMO_RENDER_URL=<url du rendu>`.
 
 ## Limites connues
 

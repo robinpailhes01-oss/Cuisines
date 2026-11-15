@@ -8,6 +8,7 @@ import { Header, type Step } from "./Header";
 import { StepPhoto } from "./StepPhoto";
 import { StepModel } from "./StepModel";
 import { StepRender, type RenderResult } from "./StepRender";
+import type { Zone } from "./ZoneEditor";
 
 export interface EngineStatus {
   provider: string;
@@ -19,6 +20,7 @@ export interface EngineStatus {
 export function Visualiseur() {
   const [step, setStep] = useState<Step>("photo");
   const [photo, setPhoto] = useState<PreparedPhoto | null>(null);
+  const [zone, setZone] = useState<Zone | null>(null);
   const [model, setModel] = useState<KitchenModel>(CATALOGUE.find((m) => m.id === "graphite-chaleureux")!);
   const [options, setOptions] = useState<RenderOptions>(DEFAULT_OPTIONS);
   const [renders, setRenders] = useState<RenderResult[]>([]);
@@ -38,10 +40,10 @@ export function Visualiseur() {
   const startRender = useCallback(() => {
     if (!photo) return;
     const id = `${Date.now()}`;
-    setRenders((r) => [{ id, model, options, status: "pending", startedAt: Date.now() }, ...r]);
+    setRenders((r) => [{ id, model, options, zone, status: "pending", phase: "rendering", attempt: 1, startedAt: Date.now() }, ...r]);
     setCurrent(id);
     go("render");
-  }, [photo, model, options, go]);
+  }, [photo, model, options, zone, go]);
 
   const updateRender = useCallback((id: string, patch: Partial<RenderResult>) => {
     setRenders((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -56,8 +58,11 @@ export function Visualiseur() {
             photo={photo}
             onPhoto={(p) => {
               setPhoto(p);
+              setZone(null);
               setRenders([]);
             }}
+            zone={zone}
+            onZone={setZone}
             onNext={() => go("model")}
           />
         )}

@@ -51,6 +51,29 @@ export async function POST(req: Request) {
       return json({ error: "Photo trop petite : au moins 640 px de large." }, 422);
     }
 
+    // Zone à transformer (optionnelle) : masque blanc sur noir peint par le client.
+    const zone = form.get("mask");
+    let guide: Buffer | null = null;
+    if (zone instanceof Blob && zone.size > 0 && zone.size < 4 * 1024 * 1024) {
+      const { width, height } = room.info;
+      const alpha = await sharp(Buffer.from(await zone.arrayBuffer()))
+        .resize(width, height, { fit: "fill" })
+        .greyscale()
+        .threshold(128)
+        .linear(0.5, 0) // 50 % d'opacité pour le voile rouge
+        .toColourspace("b-w")
+        .raw()
+        .toBuffer();
+      const coverage = alpha.reduce((n, v) => n + (v > 0 ? 1 : 0), 0) / alpha.length;
+      if (coverage > 0.01) {
+        const red = await sharp({ create: { width, height, channels: 3, background: { r: 232, g: 35, b: 30 } } })
+          .joinChannel(alpha, { raw: { width, height, channels: 1 } })
+          .png()
+          .toBuffer();
+        guide = await sharp(room.data).composite([{ input: red }]).jpeg({ quality: 88 }).toBuffer();
+      }
+    }
+
     const refPaths = (assets as Record<string, { refs: string[] }>)[model.id].refs;
     const refs = await Promise.all(
       refPaths.map(async (p) => ({ bytes: await readFile(path.join(process.cwd(), "public", p)), mime: "image/jpeg" })),
@@ -58,16 +81,20 @@ export async function POST(req: Request) {
 
     const resolution = (process.env.RENDER_RESOLUTION as Resolution) || "4K";
     const aspectRatio = closestRatio(room.info.width, room.info.height);
-    const prompt = buildRenderPrompt(model, options, refs.length);
+    const prompt = buildRenderPrompt(model, options, refs.length, !!guide);
 
     const started = await provider.start({
       prompt,
-      images: [{ bytes: room.data, mime: "image/jpeg" }, ...refs],
+      images: [
+        { bytes: room.data, mime: "image/jpeg" },
+        ...(guide ? [{ bytes: guide, mime: "image/jpeg" }] : []),
+        ...refs,
+      ],
       aspectRatio,
       resolution,
     });
 
-    const meta = { provider: provider.id, demo: provider.id === "demo", resolution, aspectRatio };
+    const meta = { provider: provider.id, demo: provider.id === "demo", resolution, aspectRatio, zone: !!guide };
     if ("result" in started) return json({ ...meta, jobId: null, ...started.result });
     return json({ ...meta, jobId: `${provider.id}.${started.taskId}`, status: "pending" });
   } catch (e) {

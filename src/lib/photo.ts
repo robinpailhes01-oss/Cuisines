@@ -1,5 +1,7 @@
 "use client";
 
+import { closestRatio } from "./prompt";
+
 export interface PreparedPhoto {
   blob: Blob;
   url: string;
@@ -9,6 +11,9 @@ export interface PreparedPhoto {
   originalWidth: number;
   originalHeight: number;
   warnings: string[];
+  /** Fichier d'origine (pleine résolution) et recadrage appliqué, pour la restauration hors zone. */
+  source: Blob;
+  crop: { x: number; y: number; w: number; h: number };
 }
 
 const MAX_EDGE = 2560;
@@ -32,15 +37,25 @@ export async function preparePhoto(file: Blob): Promise<PreparedPhoto> {
   } catch {
     throw new Error("Impossible de lire cette image. Essayez une photo JPEG ou PNG.");
   }
-  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
-  const width = Math.round(bitmap.width * scale);
-  const height = Math.round(bitmap.height * scale);
+  // Recadrage au ratio exact que le moteur IA renverra (4:3, 16:9…) :
+  // l'avant et l'après se superposent alors au pixel près.
+  const [rw, rh] = closestRatio(bitmap.width, bitmap.height).split(":").map(Number);
+  let cw = bitmap.width;
+  let ch = Math.round((cw * rh) / rw);
+  if (ch > bitmap.height) {
+    ch = bitmap.height;
+    cw = Math.round((ch * rw) / rh);
+  }
+  const crop = { x: Math.round((bitmap.width - cw) / 2), y: Math.round((bitmap.height - ch) / 2), w: cw, h: ch };
+  const scale = Math.min(1, MAX_EDGE / Math.max(cw, ch));
+  const width = Math.round(cw * scale);
+  const height = Math.round(ch * scale);
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d")!;
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(bitmap, 0, 0, width, height);
+  ctx.drawImage(bitmap, crop.x, crop.y, crop.w, crop.h, 0, 0, width, height);
 
   const warnings: string[] = [];
   if (Math.max(bitmap.width, bitmap.height) < 1200) warnings.push("Photo de faible résolution : le rendu sera moins détaillé.");
@@ -61,5 +76,5 @@ export async function preparePhoto(file: Blob): Promise<PreparedPhoto> {
   const originalWidth = bitmap.width;
   const originalHeight = bitmap.height;
   bitmap.close();
-  return { blob, url: URL.createObjectURL(blob), width, height, originalWidth, originalHeight, warnings };
+  return { blob, url: URL.createObjectURL(blob), width, height, originalWidth, originalHeight, warnings, source: file, crop };
 }

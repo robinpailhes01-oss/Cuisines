@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import type { KitchenModel } from "@/data/catalogue";
 import type { RenderOptions } from "@/lib/prompt";
 import type { PreparedPhoto } from "@/lib/photo";
+import { finalizeRender } from "@/lib/composite";
+import { zoneToPng, type Zone } from "./ZoneEditor";
 import { BeforeAfter } from "./BeforeAfter";
 import { LeadForm } from "./LeadForm";
 import { Viewer } from "./Viewer";
@@ -13,8 +15,14 @@ export interface RenderResult {
   id: string;
   model: KitchenModel;
   options: RenderOptions;
+  zone: Zone | null;
   status: "pending" | "done" | "error";
+  phase: "rendering" | "checking" | "retrying";
+  attempt: number;
   startedAt: number;
+  /** Image brute renvoyée par l'IA (URL hébergée, transmise avec la demande d'estimation). */
+  aiUrl?: string;
+  qc?: { aligned: boolean; spill: number; restored: boolean; attempts: number };
   jobId?: string | null;
   imageUrl?: string;
   width?: number;
@@ -31,7 +39,7 @@ const STAGES = [
   { at: 55, label: "Matières, reflets et lumière" },
   { at: 80, label: "Finition haute définition" },
 ];
-const EXPECTED_MS = 50_000;
+const EXPECTED_MS = 90_000; // rendu 4K mesuré : ~90 s
 
 export function StepRender({
   photo,
@@ -80,7 +88,7 @@ export function StepRender({
           {current.status === "done" && current.imageUrl ? (
             <div className="relative">
               <BeforeAfter key={current.id} before={photo.url} after={current.imageUrl} ratio={ratio} intro />
-              {current.demo && current.model.id !== "graphite-chaleureux" && (
+              {current.demo && !["graphite-chaleureux", "cuisine-verte"].includes(current.model.id) && (
                 <span className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
                   Démo : rendu d’exemple « Graphite chaleureux »
                 </span>
@@ -90,13 +98,13 @@ export function StepRender({
             <div className="grid place-items-center rounded-2xl bg-sand p-10 text-center ring-1 ring-line" style={{ aspectRatio: ratio }}>
               <div>
                 <p className="text-ink-soft">{current.error}</p>
-                <button type="button" className="btn btn-dark mt-5" onClick={() => { startedRef.current.delete(current.id); onUpdate(current.id, { status: "pending", error: undefined, startedAt: Date.now() }); }}>
+                <button type="button" className="btn btn-dark mt-5" onClick={() => { startedRef.current.delete(current.id); onUpdate(current.id, { status: "pending", phase: "rendering", attempt: 1, error: undefined, startedAt: Date.now() }); }}>
                   Relancer le rendu
                 </button>
               </div>
             </div>
           ) : (
-            <Pending photo={photo} startedAt={current.startedAt} ratio={ratio} />
+            <Pending photo={photo} startedAt={current.startedAt} ratio={ratio} phase={current.phase} />
           )}
         </div>
 
@@ -111,6 +119,7 @@ export function StepRender({
             </span>
           </div>
         )}
+        {current.status === "done" && current.qc && <QualityBadge qc={current.qc} zone={!!current.zone} />}
 
         {renders.length > 1 && (
           <div className="mt-8">
@@ -157,25 +166,59 @@ export function StepRender({
   );
 }
 
+const MAX_ATTEMPTS = 2;
+
+async function renderOnce(r: RenderResult, photo: PreparedPhoto, onUpdate: (id: string, p: Partial<RenderResult>) => void) {
+  const fd = new FormData();
+  fd.append("photo", photo.blob, "piece.jpg");
+  fd.append("modelId", r.model.id);
+  fd.append("options", JSON.stringify(r.options));
+  if (r.zone) fd.append("mask", await zoneToPng(r.zone), "zone.png");
+  const res = await fetch("/api/render", { method: "POST", body: fd });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? "Le service de rendu ne répond pas.");
+  onUpdate(r.id, { demo: data.demo, resolution: data.resolution, jobId: data.jobId });
+  if (data.status === "done") return { url: data.imageUrl as string, demo: !!data.demo };
+  const deadline = Date.now() + 6 * 60_000;
+  while (Date.now() < deadline) {
+    await new Promise((ok) => setTimeout(ok, 2500));
+    const st = await fetch(`/api/render/${encodeURIComponent(data.jobId)}`, { cache: "no-store" }).then((x) => x.json());
+    if (st.status === "done") return { url: st.imageUrl as string, demo: !!data.demo };
+    if (st.status === "error") throw new Error(st.message);
+  }
+  throw new Error("Le rendu prend plus de temps que prévu. Merci de réessayer.");
+}
+
+/**
+ * Rendu + contrôle qualité. Si la perspective a bougé ou si l'IA a débordé
+ * hors de la zone, un second essai est lancé automatiquement ; on garde le meilleur.
+ */
 async function run(r: RenderResult, photo: PreparedPhoto, onUpdate: (id: string, p: Partial<RenderResult>) => void) {
   try {
-    const fd = new FormData();
-    fd.append("photo", photo.blob, "piece.jpg");
-    fd.append("modelId", r.model.id);
-    fd.append("options", JSON.stringify(r.options));
-    const res = await fetch("/api/render", { method: "POST", body: fd });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "Le service de rendu ne répond pas.");
-    onUpdate(r.id, { demo: data.demo, resolution: data.resolution, jobId: data.jobId });
-    if (data.status === "done") return finish(r.id, data.imageUrl, onUpdate);
-    const deadline = Date.now() + 6 * 60_000;
-    while (Date.now() < deadline) {
-      await new Promise((ok) => setTimeout(ok, 2500));
-      const s = await fetch(`/api/render/${encodeURIComponent(data.jobId)}`, { cache: "no-store" }).then((x) => x.json());
-      if (s.status === "done") return finish(r.id, s.imageUrl, onUpdate);
-      if (s.status === "error") throw new Error(s.message);
+    let best: { url: string; aiUrl: string; width: number; height: number; ok: boolean; restored: boolean; aligned: boolean; spill: number; score: number } | null = null;
+    let attempts = 0;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      attempts = attempt;
+      onUpdate(r.id, { phase: attempt === 1 ? "rendering" : "retrying", attempt });
+      const { url, demo } = await renderOnce(r, photo, onUpdate);
+      onUpdate(r.id, { phase: "checking" });
+      let q;
+      try {
+        q = await finalizeRender(url, photo, r.zone?.canvas ?? null);
+      } catch {
+        q = null; // contrôle impossible (navigateur ancien) : on garde le rendu tel quel
+      }
+      const score = q ? (q.ok ? 2 : 0) + q.report.similarity - q.report.spill : 0;
+      const cand = {
+        url: q?.url ?? url, aiUrl: url, width: q?.width ?? 0, height: q?.height ?? 0,
+        ok: q?.ok ?? true, restored: q?.restored ?? false, aligned: q?.report.aligned ?? true, spill: q?.report.spill ?? 0, score,
+      };
+      if (!best || cand.score > best.score) best = cand;
+      if (cand.ok || demo) break;
     }
-    throw new Error("Le rendu prend plus de temps que prévu. Merci de réessayer.");
+    const b = best!;
+    onUpdate(r.id, { aiUrl: b.aiUrl, qc: { aligned: b.aligned, spill: b.spill, restored: b.restored, attempts } });
+    finish(r.id, b.url, onUpdate);
   } catch (e) {
     onUpdate(r.id, { status: "error", error: e instanceof Error ? e.message : "Erreur inattendue" });
   }
@@ -189,7 +232,37 @@ function finish(id: string, url: string, onUpdate: (id: string, p: Partial<Rende
   img.src = url;
 }
 
-function Pending({ photo, startedAt, ratio }: { photo: PreparedPhoto; startedAt: number; ratio: number }) {
+function QualityBadge({ qc, zone }: { qc: NonNullable<RenderResult["qc"]>; zone: boolean }) {
+  const items: { ok: boolean; text: string }[] = [
+    { ok: qc.aligned, text: qc.aligned ? "Perspective de la pièce conservée" : "Perspective légèrement modifiée par l’IA" },
+  ];
+  if (zone) {
+    items.push(
+      qc.restored
+        ? { ok: true, text: "Hors de la zone : votre photo d’origine, au pixel près" }
+        : { ok: false, text: "L’IA a débordé de la zone : rendu affiché sans restauration" },
+    );
+  } else {
+    items.push({ ok: false, text: "Astuce : peignez la zone de la cuisine pour figer le reste de la pièce" });
+  }
+  if (qc.attempts > 1) items.push({ ok: true, text: "Contrôle qualité : un 2ᵉ essai a été fait automatiquement" });
+  return (
+    <ul className="mt-3 flex flex-wrap gap-2" aria-label="Contrôle qualité">
+      {items.map((i) => (
+        <li key={i.text} className={`rounded-full px-3 py-1.5 text-xs font-bold ${i.ok ? "bg-emerald-50 text-emerald-900 ring-1 ring-emerald-200" : "bg-amber-50 text-amber-900 ring-1 ring-amber-200"}`}>
+          {i.ok ? "✓" : "!"} {i.text}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const PHASE_LABEL = {
+  checking: "Contrôle qualité : perspective et zone protégée",
+  retrying: "La perspective a bougé : nouvel essai automatique",
+} as const;
+
+function Pending({ photo, startedAt, ratio, phase }: { photo: PreparedPhoto; startedAt: number; ratio: number; phase: RenderResult["phase"] }) {
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 250);
@@ -205,7 +278,7 @@ function Pending({ photo, startedAt, ratio }: { photo: PreparedPhoto; startedAt:
       <img src={photo.url} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70 saturate-50" />
       <div className="scan absolute inset-0" />
       <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-night/85 via-night/50 to-transparent p-5 pt-16 text-cream sm:p-8">
-        <p className="font-serif text-xl sm:text-2xl" aria-live="polite">{stage.label}…</p>
+        <p className="font-serif text-xl sm:text-2xl" aria-live="polite">{phase === "rendering" ? stage.label : PHASE_LABEL[phase]}…</p>
         <div className="mt-4 h-1 overflow-hidden rounded-full bg-cream/25">
           <div className="h-full rounded-full bg-cream transition-[width] duration-300" style={{ width: `${pct}%` }} />
         </div>

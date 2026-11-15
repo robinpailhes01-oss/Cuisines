@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { preparePhoto, type PreparedPhoto } from "@/lib/photo";
 import { BeforeAfter } from "./BeforeAfter";
+import { ZoneEditor, type Zone } from "./ZoneEditor";
 
 const TIPS = [
   { t: "À l’horizontale", d: "Tenez le téléphone en paysage pour cadrer tout le mur de la cuisine." },
@@ -11,7 +12,19 @@ const TIPS = [
   { t: "Pièce vide ou existante", d: "Une ancienne cuisine ou un mur nu : l’IA remplace tout le mobilier." },
 ];
 
-export function StepPhoto({ photo, onPhoto, onNext }: { photo: PreparedPhoto | null; onPhoto: (p: PreparedPhoto) => void; onNext: () => void }) {
+export function StepPhoto({
+  photo,
+  onPhoto,
+  onNext,
+  zone,
+  onZone,
+}: {
+  photo: PreparedPhoto | null;
+  onPhoto: (p: PreparedPhoto) => void;
+  onNext: () => void;
+  zone: Zone | null;
+  onZone: (z: Zone | null) => void;
+}) {
   const camRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -41,12 +54,15 @@ export function StepPhoto({ photo, onPhoto, onNext }: { photo: PreparedPhoto | n
       <section className="fade-up mx-auto max-w-5xl pt-8 sm:pt-12">
         <p className="eyebrow">Étape 1 · Votre pièce</p>
         <h1 className="mt-3 font-serif text-3xl leading-tight sm:text-5xl">Photo prête.</h1>
-        <div className="mt-6 overflow-hidden rounded-2xl bg-sand ring-1 ring-line">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={photo.url} alt="Votre pièce" className="max-h-[62vh] w-full object-contain" />
+        <p className="mt-3 max-w-2xl text-ink-soft">
+          <b className="text-ink">Recommandé :</b> peignez la zone où installer la cuisine. Tout le reste de la photo sera conservé au pixel près, et l’IA ne pourra pas déborder.
+        </p>
+        <div className="mt-6">
+          <ZoneEditor photo={photo} zone={zone} onChange={onZone} />
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-ink-soft">
           <span>✓ {photo.originalWidth} × {photo.originalHeight} px</span>
+          <span>✓ Cadrée au format {photo.width > photo.height ? "paysage" : "portrait"} du rendu</span>
           <span>✓ Orientation corrigée</span>
           <span>✓ Optimisée pour l’envoi ({Math.round(photo.blob.size / 1024)} Ko)</span>
         </div>

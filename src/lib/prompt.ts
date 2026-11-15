@@ -39,11 +39,19 @@ const AMBIANCE_TEXT: Record<AmbianceOption, string> = {
  * Prompt « architectural visualisation » : la photo du client est la vérité
  * géométrique, les références définissent uniquement le mobilier.
  */
-export function buildRenderPrompt(model: KitchenModel, opts: RenderOptions, refCount: number): string {
-  const refs = refCount === 1 ? "IMAGE 2 is" : `IMAGES 2 to ${refCount + 1} are`;
+export function buildRenderPrompt(model: KitchenModel, opts: RenderOptions, refCount: number, hasZone = false): string {
+  const first = hasZone ? 3 : 2;
+  const refs = refCount === 1 ? `IMAGE ${first} is` : `IMAGES ${first} to ${first + refCount - 1} are`;
+  const zone = hasZone
+    ? [
+        `IMAGE 2 is the same photo where the client has painted, in translucent red, the ONLY area that may be transformed.`,
+        `STRICT ZONE RULE: install the new kitchen only inside the red area of IMAGE 2. Every part of the photo outside the red area must remain pixel-identical to IMAGE 1: same walls (including any marks), floor, ceiling, windows, radiators, objects and lighting. Never place an island, furniture or appliances outside the red area. The final image must contain no red tint.`,
+      ]
+    : [];
   return [
     `You are a high-end architectural photographer and interior visualisation expert working for the Swiss kitchen maker BP Cuisines.`,
     `IMAGE 1 is a real photo of a client's room. ${refs} reference photos of the kitchen model "${model.name}" that the client wants.`,
+    ...zone,
     ``,
     `GOAL: produce a photograph of THE SAME ROOM as IMAGE 1, after the new "${model.name}" kitchen has been professionally installed.`,
     ``,
@@ -56,7 +64,9 @@ export function buildRenderPrompt(model: KitchenModel, opts: RenderOptions, refC
     `REPLACE: remove the old kitchen entirely (cabinets, worktop, tiles/backsplash, old appliances, hood, fridge) and install the new kitchen.`,
     LAYOUT_TEXT[opts.layout],
     `Keep the sink near its original position (under or near the window if there is one) and the cooktop away from the window.`,
-    `Walls not covered by the kitchen: fresh, clean matte white paint (repair stains and cracks).`,
+    hasZone
+      ? `Inside the red area, wall surfaces not covered by furniture get fresh, clean matte white paint.`
+      : `Walls not covered by the kitchen: fresh, clean matte white paint (repair stains and cracks).`,
     ``,
     `NEW KITCHEN — reproduce faithfully the materials, colours, textures, fronts, handles, worktop, backsplash and design language of the reference photos:`,
     model.spec,

@@ -6,7 +6,7 @@ import { ProviderError } from "./types";
  * Sortie 4K native, jusqu'à 8 images d'entrée. Doc : https://docs.kie.ai
  */
 const API = "https://api.kie.ai/api/v1";
-const UPLOAD = "https://kieai.redpandaai.co/api/file-base64-upload";
+const UPLOAD = process.env.KIE_UPLOAD_URL ?? "https://kieai.redpandaai.co/api/file-base64-upload";
 const MODEL = process.env.KIE_MODEL ?? "nano-banana-pro";
 
 function key() {

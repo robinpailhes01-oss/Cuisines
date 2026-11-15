@@ -36,7 +36,7 @@ export function LeadForm({ render }: { render: RenderResult }) {
             consent: f.get("consent") === "on",
             modelId: render.model.id,
             options: render.options,
-            renderUrl: render.imageUrl,
+            renderUrl: render.aiUrl ?? render.imageUrl,
           }),
         }).catch(() => null);
         if (res?.ok) setState("sent");

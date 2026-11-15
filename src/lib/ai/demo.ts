@@ -6,6 +6,11 @@ import type { JobState, Provider } from "./types";
  * Permet de présenter l'outil hors ligne (salon, rendez-vous client).
  */
 const started = new Map<string, { at: number; model: string }>();
+/** Rendus réels pré-calculés sur la photo d'exemple, par nom de modèle. */
+const DEMO_RENDERS: Record<string, string> = {
+  "Graphite chaleureux": "/demo/apres-graphite-chaleureux.jpg",
+  "Écrin de sauge": "/demo/apres-cuisine-verte.jpg",
+};
 const DURATION = 12_000;
 
 export const demo: Provider = {
@@ -21,6 +26,7 @@ export const demo: Provider = {
     const s = started.get(taskId);
     const elapsed = s ? Date.now() - s.at : DURATION;
     if (elapsed < DURATION) return { status: "pending", progress: Math.round((elapsed / DURATION) * 100) };
-    return { status: "done", imageUrl: "/demo/apres-graphite-chaleureux.jpg" };
+    // DEMO_RENDER_URL : rejoue un rendu existant (tests du contrôle qualité sans coût IA).
+    return { status: "done", imageUrl: process.env.DEMO_RENDER_URL || DEMO_RENDERS[s?.model ?? ""] || DEMO_RENDERS["Graphite chaleureux"] };
   },
 };
