@@ -10,6 +10,7 @@ const started = new Map<string, { at: number; model: string }>();
 const DEMO_RENDERS: Record<string, string> = {
   "Graphite chaleureux": "/demo/apres-graphite-chaleureux.jpg",
   "Écrin de sauge": "/demo/apres-cuisine-verte.jpg",
+  "Éclat lunaire": "/demo/apres-eclat-lunaire.jpg",
 };
 const DURATION = 12_000;
 

@@ -88,7 +88,7 @@ export function StepRender({
           {current.status === "done" && current.imageUrl ? (
             <div className="relative">
               <BeforeAfter key={current.id} before={photo.url} after={current.imageUrl} ratio={ratio} intro />
-              {current.demo && !["graphite-chaleureux", "cuisine-verte"].includes(current.model.id) && (
+              {current.demo && !["graphite-chaleureux", "cuisine-verte", "eclat-lunaire"].includes(current.model.id) && (
                 <span className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-900">
                   Démo : rendu d’exemple « Graphite chaleureux »
                 </span>
